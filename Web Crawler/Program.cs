@@ -7,20 +7,28 @@ using System.Threading.Tasks;
 class Web_Crawler
 {
     private HashSet<string> urlsVisited = new HashSet<string>();
-    private Queue<string> urlsToVisit = new Queue<string>();
+    private Queue<string> topLevelDomainsToVisit = new Queue<string>();
+    // Contains final list of crawled links
+    private HashSet<string> finalList = new HashSet<string>();
 
+   // Boolean returned is used for continuing of breaking th main loop in Crawl()
+    public Boolean AddToFinalListOrStop(string url, int numLinks)
+    {
+        if (finalList.Count >= numLinks)
+        {
+            return true;
+        }
+        finalList.Add(url);
+        return false;
+    }
     public async Task Crawl(string startUrl, int numLinks)
     {
-        urlsToVisit.Enqueue(startUrl);
-        
-        while (urlsToVisit.Count > 0)
+        topLevelDomainsToVisit.Enqueue(startUrl);
+        AddToFinalListOrStop(startUrl, numLinks);
+        Boolean breakLoop = false;
+        while (!breakLoop)
         {
-            if (urlsToVisit.Count >= numLinks)
-            {
-                break;
-            }
-            
-            string url = urlsToVisit.Dequeue();
+            string url = topLevelDomainsToVisit.Dequeue();
             
             // Check if URL has already been visited
             if (urlsVisited.Contains(url))
@@ -49,7 +57,11 @@ class Web_Crawler
                 }
 
                 Console.WriteLine("Found: " + absoluteUrl);
-                urlsToVisit.Enqueue(absoluteUrl);
+                if (AddToFinalListOrStop(absoluteUrl, numLinks))
+                {
+                    breakLoop = true;
+                }
+                topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
 
             var relativeAnchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](/[^""']+)[""']");
@@ -65,7 +77,11 @@ class Web_Crawler
                 }
 
                 Console.WriteLine("Found: " + absoluteUrl);
-                urlsToVisit.Enqueue(absoluteUrl);
+                if (AddToFinalListOrStop(absoluteUrl, numLinks))
+                {
+                    breakLoop = true;
+                }
+                topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
         }
     }
@@ -114,7 +130,11 @@ class Web_Crawler
                 userInput = Console.ReadLine();
                 int.TryParse(userInput, out int numLinks);
                 await crawler.Crawl(urlInput, numLinks);
-                Console.WriteLine(crawler.urlsVisited.Count);
+                Console.WriteLine("Saved " + crawler.finalList.Count + " links.");
+                foreach (var link in crawler.finalList)
+                {
+                    Console.WriteLine(link); 
+                }
             }
             else
             {
