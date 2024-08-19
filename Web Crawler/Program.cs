@@ -7,11 +7,27 @@ class Web_Crawler
 {
     static async Task Crawl(string url)
     {
+        Uri uri = new Uri(url);
+        string baseUrl = $"{uri.Scheme}://{uri.Host}";
+        Console.WriteLine($"Base URL: {baseUrl}");
         string webPage = await Fetch(url);
         var anchorMatches = Regex.Matches(webPage, @"<a href=(.*?)>");
+        
+        string startTag = "href=\"";
+        string endTag = "\">";
         foreach (Match match in anchorMatches)
         {
-            Console.WriteLine(match.Value);
+            int startIndex = match.Value.IndexOf(startTag) + startTag.Length;
+            int endIndex = match.Value.IndexOf(endTag, startIndex);
+
+            string relativePath = match.Value.Substring(startIndex, endIndex - startIndex);
+            if (relativePath.Length > 0 && relativePath[0] == '#')
+            {
+                return;
+            }
+            string fullPath = $"{baseUrl}/{relativePath}";
+            Console.WriteLine("Found: " + fullPath);
+            await Crawl(fullPath);
         }
     } 
     
