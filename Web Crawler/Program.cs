@@ -4,39 +4,37 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-class Web_Crawler
+internal class Web_Crawler
 {
-    private HashSet<string> urlsVisited = new HashSet<string>();
-    private Queue<string> topLevelDomainsToVisit = new Queue<string>();
-    // Contains final list of crawled links
-    private HashSet<string> finalList = new HashSet<string>();
+    private HashSet<string> _urlsVisited = new HashSet<string>();
+    private Queue<string> _topLevelDomainsToVisit = new Queue<string>();
+    private HashSet<string> _finalList = new HashSet<string>();
 
-   // Boolean returned is used for continuing of breaking th main loop in Crawl()
-    public Boolean AddToFinalListOrStop(string url, int numLinks)
+    private Boolean AddTofinalListOrStop(string url, int numLinks)
     {
-        if (finalList.Count >= numLinks)
+        if (_finalList.Count >= numLinks)
         {
             return true;
         }
-        finalList.Add(url);
+        _finalList.Add(url);
         return false;
     }
-    public async Task Crawl(string startUrl, int numLinks)
+
+    private async Task Crawl(string startUrl, int numLinks)
     {
-        topLevelDomainsToVisit.Enqueue(startUrl);
-        
+        _topLevelDomainsToVisit.Enqueue(startUrl);
+
         while (true)
         {
-            string url = topLevelDomainsToVisit.Dequeue();
-            
-            // Check if URL has already been visited
-            if (urlsVisited.Contains(url))
+            string url = _topLevelDomainsToVisit.Dequeue();
+
+            if (_urlsVisited.Contains(url))
             {
                 continue;
             }
-            
-            urlsVisited.Add(url);
-            AddToFinalListOrStop(startUrl, numLinks);
+
+            _urlsVisited.Add(url);
+            AddTofinalListOrStop(startUrl, numLinks);
             Console.WriteLine($"Visiting: {url}");
             string webPage = await Fetch(url);
             if (webPage == null)
@@ -50,17 +48,17 @@ class Web_Crawler
             foreach (Match match in anchorMatches)
             {
                 string absoluteUrl = match.Groups[1].Value;
-                if (urlsVisited.Contains(absoluteUrl))
+                if (_urlsVisited.Contains(absoluteUrl))
                 {
                     continue;
                 }
-                if (AddToFinalListOrStop(absoluteUrl, numLinks))
+                if (AddTofinalListOrStop(absoluteUrl, numLinks))
                 {
                     return;
                 }
                 Console.WriteLine("Found: " + absoluteUrl);
 
-                topLevelDomainsToVisit.Enqueue(absoluteUrl);
+                _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
 
             var relativeAnchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](/[^""']+)[""']");
@@ -69,23 +67,23 @@ class Web_Crawler
             {
                 string relativeUrl = match.Groups[1].Value;
                 string absoluteUrl = new Uri(baseUri, relativeUrl).ToString();
-                
-                if (urlsVisited.Contains(absoluteUrl))
+
+                if (_urlsVisited.Contains(absoluteUrl))
                 {
                     continue;
                 }
-                if (AddToFinalListOrStop(absoluteUrl, numLinks))
+                if (AddTofinalListOrStop(absoluteUrl, numLinks))
                 {
                     return;
                 }
                 Console.WriteLine("Found: " + absoluteUrl);
-                
-                topLevelDomainsToVisit.Enqueue(absoluteUrl);
+
+                _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
         }
     }
 
-    public async Task<string> Fetch(string url)
+    private async Task<string> Fetch(string url)
     {
         using (HttpClient client = new HttpClient())
         {
@@ -102,7 +100,7 @@ class Web_Crawler
         }
     }
 
-    static async Task Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Web_Crawler crawler = new Web_Crawler();
         string userInput = "";
@@ -129,17 +127,15 @@ class Web_Crawler
                 userInput = Console.ReadLine();
                 int.TryParse(userInput, out int numLinks);
                 await crawler.Crawl(urlInput, numLinks);
-                Console.WriteLine("Saved " + crawler.finalList.Count + " links.");
-                foreach (var link in crawler.finalList)
+                Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
+                foreach (var link in crawler._finalList)
                 {
-                    Console.WriteLine(link); 
+                    Console.WriteLine(link);
                 }
                 break;
             }
-            else
-            {
-                Console.WriteLine("Input is not a valid URL. Please try again.");
-            }
+          
+            Console.WriteLine("Input is not a valid URL. Please try again.");
         }
     }
 }
