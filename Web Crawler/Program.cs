@@ -24,9 +24,8 @@ class Web_Crawler
     public async Task Crawl(string startUrl, int numLinks)
     {
         topLevelDomainsToVisit.Enqueue(startUrl);
-        AddToFinalListOrStop(startUrl, numLinks);
-        Boolean breakLoop = false;
-        while (!breakLoop)
+        
+        while (true)
         {
             string url = topLevelDomainsToVisit.Dequeue();
             
@@ -37,7 +36,7 @@ class Web_Crawler
             }
             
             urlsVisited.Add(url);
-            
+            AddToFinalListOrStop(startUrl, numLinks);
             Console.WriteLine($"Visiting: {url}");
             string webPage = await Fetch(url);
             if (webPage == null)
