@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 class Web_Crawler
 {
     static async Task Crawl(string url)
     {
-        Console.WriteLine(await Fetch(url));
+        string webPage = await Fetch(url);
+        var anchorMatches = Regex.Matches(webPage, @"<a href=(.*?)>");
+        foreach (Match match in anchorMatches)
+        {
+            Console.WriteLine(match.Value);
+        }
     } 
     
     static async Task<string> Fetch(string url)
