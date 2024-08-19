@@ -12,25 +12,34 @@ class Web_Crawler
         Console.WriteLine($"Base URL: {baseUrl}");
         string webPage = await Fetch(url);
         var anchorMatches = Regex.Matches(webPage, @"<a href=(.*?)>");
-        
+
         string startTag = "href=\"";
-        string endTag = "\">";
+        string endTag = "\"";
         foreach (Match match in anchorMatches)
         {
             int startIndex = match.Value.IndexOf(startTag) + startTag.Length;
             int endIndex = match.Value.IndexOf(endTag, startIndex);
 
-            string relativePath = match.Value.Substring(startIndex, endIndex - startIndex);
-            if (relativePath.Length > 0 && relativePath[0] == '#')
+            string relativePathOrNewOrigin = match.Value.Substring(startIndex, endIndex - startIndex);
+            if (relativePathOrNewOrigin.Length > 0 && relativePathOrNewOrigin[0] == '#')
             {
                 return;
             }
-            string fullPath = $"{baseUrl}/{relativePath}";
-            Console.WriteLine("Found: " + fullPath);
-            await Crawl(fullPath);
+
+            if (relativePathOrNewOrigin.StartsWith("https://") || relativePathOrNewOrigin.StartsWith("http://"))
+            {
+                Console.WriteLine("Found: " + relativePathOrNewOrigin);
+                await Crawl(relativePathOrNewOrigin);
+            }
+            else
+            {
+                string fullPath = $"{baseUrl}/{relativePathOrNewOrigin}";
+                Console.WriteLine("Found: " + fullPath);
+                await Crawl(fullPath);
+            }
         }
-    } 
-    
+    }
+
     static async Task<string> Fetch(string url)
     {
         using (HttpClient client = new HttpClient())
@@ -47,7 +56,7 @@ class Web_Crawler
             }
         }
     }
-    
+
     static async Task Main(string[] args)
     {
         string userInput = "";
@@ -77,5 +86,4 @@ class Web_Crawler
             }
         }
     }
-
 }
