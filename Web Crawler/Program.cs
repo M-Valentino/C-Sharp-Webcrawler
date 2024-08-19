@@ -1,46 +1,76 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 class Web_Crawler
 {
-    static async Task Crawl(string url)
+    private HashSet<string> urlsVisited = new HashSet<string>();
+    private Queue<string> urlsToVisit = new Queue<string>();
+
+    public async Task Crawl(string startUrl, int numLinks)
     {
-        Uri uri = new Uri(url);
-        string baseUrl = $"{uri.Scheme}://{uri.Host}";
-        Console.WriteLine($"Base URL: {baseUrl}");
-        string webPage = await Fetch(url);
-        var anchorMatches = Regex.Matches(webPage, @"<a href=(.*?)>");
-
-        string startTag = "href=\"";
-        string endTag = "\"";
-        foreach (Match match in anchorMatches)
+        urlsToVisit.Enqueue(startUrl);
+        
+        while (urlsToVisit.Count > 0)
         {
-            int startIndex = match.Value.IndexOf(startTag) + startTag.Length;
-            int endIndex = match.Value.IndexOf(endTag, startIndex);
-
-            string relativePathOrNewOrigin = match.Value.Substring(startIndex, endIndex - startIndex);
-            if (relativePathOrNewOrigin.Length > 0 && relativePathOrNewOrigin[0] == '#')
+            if (urlsToVisit.Count >= numLinks)
             {
-                return;
+                break;
+            }
+            
+            string url = urlsToVisit.Dequeue();
+            
+            // Check if URL has already been visited
+            if (urlsVisited.Contains(url))
+            {
+                continue;
+            }
+            
+            urlsVisited.Add(url);
+            
+            Console.WriteLine($"Visiting: {url}");
+            string webPage = await Fetch(url);
+            if (webPage == null)
+            {
+                continue;
             }
 
-            if (relativePathOrNewOrigin.StartsWith("https://") || relativePathOrNewOrigin.StartsWith("http://"))
+            Uri baseUri = new Uri(url);
+            var anchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](https?://[^""']+)[""']");
+
+            foreach (Match match in anchorMatches)
             {
-                Console.WriteLine("Found: " + relativePathOrNewOrigin);
-                await Crawl(relativePathOrNewOrigin);
+                string absoluteUrl = match.Groups[1].Value;
+                if (urlsVisited.Contains(absoluteUrl))
+                {
+                    continue;
+                }
+
+                Console.WriteLine("Found: " + absoluteUrl);
+                urlsToVisit.Enqueue(absoluteUrl);
             }
-            else
+
+            var relativeAnchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](/[^""']+)[""']");
+
+            foreach (Match match in relativeAnchorMatches)
             {
-                string fullPath = $"{baseUrl}/{relativePathOrNewOrigin}";
-                Console.WriteLine("Found: " + fullPath);
-                await Crawl(fullPath);
+                string relativeUrl = match.Groups[1].Value;
+                string absoluteUrl = new Uri(baseUri, relativeUrl).ToString();
+                
+                if (urlsVisited.Contains(absoluteUrl))
+                {
+                    continue;
+                }
+
+                Console.WriteLine("Found: " + absoluteUrl);
+                urlsToVisit.Enqueue(absoluteUrl);
             }
         }
     }
 
-    static async Task<string> Fetch(string url)
+    public async Task<string> Fetch(string url)
     {
         using (HttpClient client = new HttpClient())
         {
@@ -59,6 +89,7 @@ class Web_Crawler
 
     static async Task Main(string[] args)
     {
+        Web_Crawler crawler = new Web_Crawler();
         string userInput = "";
         while (userInput?.ToLower() != "q")
         {
@@ -78,7 +109,12 @@ class Web_Crawler
 
             if (Uri.IsWellFormedUriString(userInput, UriKind.Absolute))
             {
-                await Crawl(userInput);
+                Console.WriteLine("How many links do you want to crawl?");
+                string urlInput = userInput;
+                userInput = Console.ReadLine();
+                int.TryParse(userInput, out int numLinks);
+                await crawler.Crawl(urlInput, numLinks);
+                Console.WriteLine(crawler.urlsVisited.Count);
             }
             else
             {
