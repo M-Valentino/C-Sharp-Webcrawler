@@ -26,9 +26,34 @@ class Web_Crawler
         }
     }
     
-    
     static async Task Main(string[] args)
     {
-        await Crawl("https://sacred.neocities.org");
+        string userInput = "";
+        while (userInput?.ToLower() != "q")
+        {
+            Console.WriteLine("Enter the starting URL to crawl from or press 'q' to quit:");
+            userInput = Console.ReadLine().Trim();
+
+            if (string.IsNullOrEmpty(userInput))
+            {
+                Console.WriteLine("Input cannot be empty. Please enter a valid URL or 'q' to quit.");
+                continue;
+            }
+
+            if (userInput.ToLower() == "q")
+            {
+                return;
+            }
+
+            if (Uri.IsWellFormedUriString(userInput, UriKind.Absolute))
+            {
+                await Crawl(userInput);
+            }
+            else
+            {
+                Console.WriteLine("Input is not a valid URL. Please try again.");
+            }
+        }
     }
+
 }
