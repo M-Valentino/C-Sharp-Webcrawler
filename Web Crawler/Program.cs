@@ -55,12 +55,12 @@ class Web_Crawler
                 {
                     continue;
                 }
-
-                Console.WriteLine("Found: " + absoluteUrl);
                 if (AddToFinalListOrStop(absoluteUrl, numLinks))
                 {
-                    breakLoop = true;
+                    return;
                 }
+                Console.WriteLine("Found: " + absoluteUrl);
+
                 topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
 
@@ -75,12 +75,12 @@ class Web_Crawler
                 {
                     continue;
                 }
-
-                Console.WriteLine("Found: " + absoluteUrl);
                 if (AddToFinalListOrStop(absoluteUrl, numLinks))
                 {
-                    breakLoop = true;
+                    return;
                 }
+                Console.WriteLine("Found: " + absoluteUrl);
+                
                 topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
         }
@@ -135,6 +135,7 @@ class Web_Crawler
                 {
                     Console.WriteLine(link); 
                 }
+                break;
             }
             else
             {
