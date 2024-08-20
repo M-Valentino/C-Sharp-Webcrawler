@@ -25,7 +25,7 @@ internal class Web_Crawler
     }
 
     private HashSet<string> _urlsVisited = new HashSet<string>();
-    private Queue<string> _topLevelDomainsToVisit = new Queue<string>();
+    private Queue<string> _urlsToVisit = new Queue<string>();
     private HashSet<WebPage> _finalList = new HashSet<WebPage>();
 
     private int _animationFrame = 0;
@@ -63,6 +63,10 @@ internal class Web_Crawler
         }
     }
 
+    /*
+     * Helper method that will trigger breaking of the main loop in Crawl() if the maximum number of webpages
+     * have been added.
+     */
     private Boolean AddTofinalListOrStop(WebPage page, int numLinks)
     {
         if (_finalList.Count >= numLinks)
@@ -76,12 +80,12 @@ internal class Web_Crawler
 
     private async Task Crawl(string startUrl, int numLinks, int crawlDelay)
     {
-        _topLevelDomainsToVisit.Enqueue(startUrl);
+        _urlsToVisit.Enqueue(startUrl);
 
-        while (_topLevelDomainsToVisit.Count > 0)
+        while (_urlsToVisit.Count > 0)
         {
             PrintAnimationFrame();
-            string url = _topLevelDomainsToVisit.Dequeue();
+            string url = _urlsToVisit.Dequeue();
 
             if (_urlsVisited.Contains(url))
             {
@@ -116,7 +120,7 @@ internal class Web_Crawler
                     continue;
                 }
 
-                _topLevelDomainsToVisit.Enqueue(absoluteUrl);
+                _urlsToVisit.Enqueue(absoluteUrl);
             }
 
             var relativeAnchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](/[^""']+)[""']");
@@ -130,7 +134,7 @@ internal class Web_Crawler
                     continue;
                 }
 
-                _topLevelDomainsToVisit.Enqueue(absoluteUrl);
+                _urlsToVisit.Enqueue(absoluteUrl);
             }
         }
     }
