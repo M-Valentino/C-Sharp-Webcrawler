@@ -10,14 +10,17 @@ internal class Web_Crawler
 {
     public struct WebPage
     {
-        public WebPage(string url, string title)
+        public WebPage(string url, string title, string description)
         {
             Url = url;
             Title = title;
+            Description = description;
         }
 
         public string Url { get; }
         public string Title { get; }
+        
+        public string Description { get; }
         public override string ToString() => $"URL: {Url}, Title: {Title}";
     }
 
@@ -94,7 +97,8 @@ internal class Web_Crawler
             }
 
             string title = ExtractTitle(webPage);
-            WebPage page = new WebPage(url, title);
+            string description = ExtractDescription(webPage);
+            WebPage page = new WebPage(url, title, description);
 
             if (AddTofinalListOrStop(page, numLinks))
             {
@@ -151,8 +155,15 @@ internal class Web_Crawler
     private string ExtractTitle(string htmlContent)
     {
         var titleMatch = Regex.Match(htmlContent, @"<title>\s*(.+?)\s*</title>", RegexOptions.IgnoreCase);
-        return titleMatch.Success ? titleMatch.Groups[1].Value : "No Title Found";
+        return titleMatch.Success ? $"\"{titleMatch.Groups[1].Value}\"" : "none";
     }
+    
+    private string ExtractDescription(string htmlContent)
+    {
+        var descriptionMatch = Regex.Match(htmlContent, @"<meta\s+name\s*=\s*[""']description[""']\s+content\s*=\s*[""'](.+?)[""']\s*/?>", RegexOptions.IgnoreCase);
+        return descriptionMatch.Success ? $"\"{descriptionMatch.Groups[1].Value}\"" : "none";
+    }
+
 
     public static async Task Main(string[] args)
     {
@@ -177,10 +188,10 @@ internal class Web_Crawler
             {
                 string filePath = "webpages.csv";
                 StringBuilder csv = new StringBuilder();
-                csv.AppendLine("url,title");
+                csv.AppendLine("url,title,description");
                 foreach (var webPage in crawler._finalList)
                 {
-                    csv.AppendLine($"{webPage.Url},{webPage.Title}");
+                    csv.AppendLine($"{webPage.Url},{webPage.Title},{webPage.Description}");
                 }
 
                 File.WriteAllText(filePath, csv.ToString());
