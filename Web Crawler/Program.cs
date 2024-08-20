@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.IO;
+using System.Text;
 
 internal class Web_Crawler
 {
@@ -158,10 +160,27 @@ internal class Web_Crawler
 
         await crawler.Crawl(args[0], int.Parse(args[1]));
         Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
-        foreach (var link in crawler._finalList)
+        if (args.Length == 2)
         {
-            Console.WriteLine(link);
+            foreach (var link in crawler._finalList)
+            {
+                Console.WriteLine(link);
+            }
         }
-        
+        else
+        {
+            if (args[2] == "csv")
+            {
+                string filePath = "webpages.csv";
+                StringBuilder csv = new StringBuilder();
+                csv.AppendLine("url,title");
+                foreach (var webPage in crawler._finalList)
+                {
+                    csv.AppendLine($"{webPage.Url},{webPage.Title}");
+                }
+                File.WriteAllText(filePath, csv.ToString());
+                Console.WriteLine($"CSV file has been written to {filePath}");
+            }
+        }
     }
 }
