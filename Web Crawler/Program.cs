@@ -22,7 +22,7 @@ internal class Web_Crawler
     private HashSet<string> _urlsVisited = new HashSet<string>();
     private Queue<string> _topLevelDomainsToVisit = new Queue<string>();
     private HashSet<WebPage> _finalList = new HashSet<WebPage>();
-    
+
     private int _animationFrame = 0;
 
     private void PrintAnimationFrame()
@@ -43,10 +43,10 @@ internal class Web_Crawler
                 Console.WriteLine("-");
                 _animationFrame++;
                 break;
-           case 1:
-               Console.WriteLine("\\");
-               _animationFrame++;
-               break;
+            case 1:
+                Console.WriteLine("\\");
+                _animationFrame++;
+                break;
             case 2:
                 Console.WriteLine("|");
                 _animationFrame++;
@@ -56,7 +56,6 @@ internal class Web_Crawler
                 _animationFrame = 0;
                 break;
         }
-        
     }
 
     private Boolean AddTofinalListOrStop(WebPage page, int numLinks)
@@ -65,6 +64,7 @@ internal class Web_Crawler
         {
             return true;
         }
+
         _finalList.Add(page);
         return false;
     }
@@ -84,7 +84,7 @@ internal class Web_Crawler
             }
 
             _urlsVisited.Add(url);
-            
+
             string webPage = await Fetch(url);
             if (webPage == null)
             {
@@ -109,7 +109,7 @@ internal class Web_Crawler
                 {
                     continue;
                 }
-                
+
                 _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
 
@@ -123,7 +123,7 @@ internal class Web_Crawler
                 {
                     continue;
                 }
-             
+
                 _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
         }
@@ -155,39 +155,13 @@ internal class Web_Crawler
     public static async Task Main(string[] args)
     {
         Web_Crawler crawler = new Web_Crawler();
-        string userInput = "";
-        while (userInput?.ToLower() != "q")
+
+        await crawler.Crawl(args[0], int.Parse(args[1]));
+        Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
+        foreach (var link in crawler._finalList)
         {
-            Console.WriteLine("Enter the starting URL to crawl from or press 'q' to quit:");
-            userInput = Console.ReadLine().Trim();
-
-            if (string.IsNullOrEmpty(userInput))
-            {
-                Console.WriteLine("Input cannot be empty. Please enter a valid URL or 'q' to quit.");
-                continue;
-            }
-
-            if (userInput.ToLower() == "q")
-            {
-                return;
-            }
-
-            if (Uri.IsWellFormedUriString(userInput, UriKind.Absolute))
-            {
-                Console.WriteLine("How many links do you want to crawl?");
-                string urlInput = userInput;
-                userInput = Console.ReadLine();
-                int.TryParse(userInput, out int numLinks);
-                await crawler.Crawl(urlInput, numLinks);
-                Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
-                foreach (var link in crawler._finalList)
-                {
-                    Console.WriteLine(link);
-                }
-                break;
-            }
-
-            Console.WriteLine("Input is not a valid URL. Please try again.");
+            Console.WriteLine(link);
         }
+        
     }
 }
