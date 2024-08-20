@@ -6,9 +6,22 @@ using System.Threading.Tasks;
 
 internal class Web_Crawler
 {
+    public struct WebPage
+    {
+        public WebPage(string url, string title)
+        {
+            Url = url;
+            Title = title;
+        }
+
+        public string Url { get; }
+        public string Title { get; }
+        public override string ToString() => $"URL: {Url}, Title {Title}";
+    }
+    
     private HashSet<string> _urlsVisited = new HashSet<string>();
     private Queue<string> _topLevelDomainsToVisit = new Queue<string>();
-    private HashSet<string> _finalList = new HashSet<string>();
+    private HashSet<WebPage> _finalList = new HashSet<WebPage>();
 
     private Boolean AddTofinalListOrStop(string url, int numLinks)
     {
@@ -16,7 +29,8 @@ internal class Web_Crawler
         {
             return true;
         }
-        _finalList.Add(url);
+        WebPage page = new WebPage(url, url);
+        _finalList.Add(page);
         return false;
     }
 
