@@ -156,20 +156,24 @@ internal class Web_Crawler
 
     public static async Task Main(string[] args)
     {
-        Web_Crawler crawler = new Web_Crawler();
-
-        await crawler.Crawl(args[0], int.Parse(args[1]));
-        Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
-        if (args.Length == 2)
+        if (args.Length < 2)
         {
-            foreach (var link in crawler._finalList)
-            {
-                Console.WriteLine(link);
-            }
+            Console.WriteLine("Usage: dotnet run <url> <number of links to craw> [--csv]");
         }
         else
         {
-            if (args[2] == "csv")
+            Web_Crawler crawler = new Web_Crawler();
+
+            await crawler.Crawl(args[0], int.Parse(args[1]));
+            Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
+            if (args.Length == 2)
+            {
+                foreach (var link in crawler._finalList)
+                {
+                    Console.WriteLine(link);
+                }
+            }
+            else if (args[2] == "--csv")
             {
                 string filePath = "webpages.csv";
                 StringBuilder csv = new StringBuilder();
@@ -178,8 +182,17 @@ internal class Web_Crawler
                 {
                     csv.AppendLine($"{webPage.Url},{webPage.Title}");
                 }
+
                 File.WriteAllText(filePath, csv.ToString());
                 Console.WriteLine($"CSV file has been written to {filePath}");
+            }
+            else
+            {
+                Console.WriteLine($"Invalid 3rd arg provided for exporting to CSV. Printing crawled links: ");
+                foreach (var link in crawler._finalList)
+                {
+                    Console.WriteLine(link);
+                }
             }
         }
     }
