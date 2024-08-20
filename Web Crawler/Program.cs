@@ -74,7 +74,7 @@ internal class Web_Crawler
         return false;
     }
 
-    private async Task Crawl(string startUrl, int numLinks)
+    private async Task Crawl(string startUrl, int numLinks, int crawlDelay)
     {
         _topLevelDomainsToVisit.Enqueue(startUrl);
 
@@ -89,7 +89,7 @@ internal class Web_Crawler
             }
 
             _urlsVisited.Add(url);
-
+            Thread.Sleep(crawlDelay);
             string webPage = await Fetch(url);
             if (webPage == null)
             {
@@ -175,8 +175,18 @@ internal class Web_Crawler
         {
             Web_Crawler crawler = new Web_Crawler();
 
-            await crawler.Crawl(args[0], int.Parse(args[1]));
-            Console.WriteLine("Saved " + crawler._finalList.Count + " links.");
+            int crawlDelay = 1000;
+            var index = Array.FindIndex(args, arg => arg.StartsWith("--cd:"));
+
+            if (index != -1)
+            {
+                var matchingArg = args[index];
+                crawlDelay = int.Parse(matchingArg.Substring(5));
+                
+            }
+
+            await crawler.Crawl(args[0], int.Parse(args[1]), crawlDelay);
+            Console.WriteLine("Found " + crawler._finalList.Count + " links.");
             if (args.Length == 2)
             {
                 foreach (var link in crawler._finalList)
@@ -184,7 +194,7 @@ internal class Web_Crawler
                     Console.WriteLine(link);
                 }
             }
-            else if (args[2] == "--csv")
+            else if ( args.Skip(2).Contains("--csv"))
             {
                 string filePath = "webpages.csv";
                 StringBuilder csv = new StringBuilder();
@@ -199,7 +209,6 @@ internal class Web_Crawler
             }
             else
             {
-                Console.WriteLine($"Invalid 3rd arg provided for exporting to CSV. Printing crawled links: ");
                 foreach (var link in crawler._finalList)
                 {
                     Console.WriteLine(link);
