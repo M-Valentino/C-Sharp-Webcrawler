@@ -16,20 +16,55 @@ internal class Web_Crawler
 
         public string Url { get; }
         public string Title { get; }
-        public override string ToString() => $"URL: {Url}, Title {Title}";
+        public override string ToString() => $"URL: {Url}, Title: {Title}";
     }
-    
+
     private HashSet<string> _urlsVisited = new HashSet<string>();
     private Queue<string> _topLevelDomainsToVisit = new Queue<string>();
     private HashSet<WebPage> _finalList = new HashSet<WebPage>();
+    
+    private int _animationFrame = 0;
 
-    private Boolean AddTofinalListOrStop(string url, int numLinks)
+    private void PrintAnimationFrame()
+    {
+        // Move the cursor up one line
+        if (Console.CursorTop > 0)
+        {
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
+        }
+
+        // Clear the current line
+        Console.Write(new string(' ', Console.WindowWidth));
+        Console.SetCursorPosition(0, Console.CursorTop);
+
+        switch (_animationFrame)
+        {
+            case 0:
+                Console.WriteLine("-");
+                _animationFrame++;
+                break;
+           case 1:
+               Console.WriteLine("\\");
+               _animationFrame++;
+               break;
+            case 2:
+                Console.WriteLine("|");
+                _animationFrame++;
+                break;
+            case 3:
+                Console.WriteLine("/");
+                _animationFrame = 0;
+                break;
+        }
+        
+    }
+
+    private Boolean AddTofinalListOrStop(WebPage page, int numLinks)
     {
         if (_finalList.Count >= numLinks)
         {
             return true;
         }
-        WebPage page = new WebPage(url, url);
         _finalList.Add(page);
         return false;
     }
@@ -38,8 +73,9 @@ internal class Web_Crawler
     {
         _topLevelDomainsToVisit.Enqueue(startUrl);
 
-        while (true)
+        while (_topLevelDomainsToVisit.Count > 0)
         {
+            PrintAnimationFrame();
             string url = _topLevelDomainsToVisit.Dequeue();
 
             if (_urlsVisited.Contains(url))
@@ -48,12 +84,19 @@ internal class Web_Crawler
             }
 
             _urlsVisited.Add(url);
-            AddTofinalListOrStop(startUrl, numLinks);
-            Console.WriteLine($"Visiting: {url}");
+            
             string webPage = await Fetch(url);
             if (webPage == null)
             {
                 continue;
+            }
+
+            string title = ExtractTitle(webPage);
+            WebPage page = new WebPage(url, title);
+
+            if (AddTofinalListOrStop(page, numLinks))
+            {
+                return;
             }
 
             Uri baseUri = new Uri(url);
@@ -66,17 +109,11 @@ internal class Web_Crawler
                 {
                     continue;
                 }
-                if (AddTofinalListOrStop(absoluteUrl, numLinks))
-                {
-                    return;
-                }
-                Console.WriteLine("Found: " + absoluteUrl);
-
+                
                 _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
 
             var relativeAnchorMatches = Regex.Matches(webPage, @"<a\s+href\s*=\s*[""'](/[^""']+)[""']");
-
             foreach (Match match in relativeAnchorMatches)
             {
                 string relativeUrl = match.Groups[1].Value;
@@ -86,12 +123,7 @@ internal class Web_Crawler
                 {
                     continue;
                 }
-                if (AddTofinalListOrStop(absoluteUrl, numLinks))
-                {
-                    return;
-                }
-                Console.WriteLine("Found: " + absoluteUrl);
-
+             
                 _topLevelDomainsToVisit.Enqueue(absoluteUrl);
             }
         }
@@ -112,6 +144,12 @@ internal class Web_Crawler
                 return null;
             }
         }
+    }
+
+    private string ExtractTitle(string htmlContent)
+    {
+        var titleMatch = Regex.Match(htmlContent, @"<title>\s*(.+?)\s*</title>", RegexOptions.IgnoreCase);
+        return titleMatch.Success ? titleMatch.Groups[1].Value : "No Title Found";
     }
 
     public static async Task Main(string[] args)
@@ -148,7 +186,7 @@ internal class Web_Crawler
                 }
                 break;
             }
-          
+
             Console.WriteLine("Input is not a valid URL. Please try again.");
         }
     }
